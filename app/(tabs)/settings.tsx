@@ -3,8 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  ScrollView,
+  Alert, Clipboard, ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,6 +19,7 @@ import Animated, {
 import { BluetoothConnection } from '../../components/ui/BluetoothConnection';
 import { Card } from '../../components/ui/Card';
 import { Switch } from '../../components/ui/Switch';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useTheme } from '../../hooks/useTheme';
 import { storageService } from '../../services/storage';
 import { ThemeMode } from '../../types/theme';
@@ -46,6 +46,7 @@ interface UserPreferences {
 
 export default function SettingsScreen() {
   const { theme, themeMode, setThemeMode, isDark } = useTheme();
+  const pushNotifications = usePushNotifications();
   const [preferences, setPreferences] = useState<UserPreferences>({
     notifications: {
       cleaningComplete: true,
@@ -384,6 +385,132 @@ export default function SettingsScreen() {
             </Card>
           </Animated.View>
 
+          {/* Push Notifications */}
+          <Animated.View entering={FadeInDown.delay(350).springify()}>
+            <Card glassmorphism style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons
+                  name="cellphone-message"
+                  size={24}
+                  color={theme.colors.primary}
+                />
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Push Notifications
+                </Text>
+              </View>
+
+              <View style={styles.pushNotificationInfo}>
+                <View style={styles.pushStatusRow}>
+                  <View style={styles.pushStatusInfo}>
+                    <Text style={[styles.pushStatusLabel, { color: theme.colors.text }]}>
+                      Status
+                    </Text>
+                    <View style={styles.pushStatusMeta}>
+                      <View
+                        style={[
+                          styles.connectionDot,
+                          {
+                            backgroundColor: pushNotifications.isInitialized && pushNotifications.expoPushToken
+                              ? theme.colors.success
+                              : theme.colors.error,
+                          },
+                        ]}
+                      />
+                      <Text style={[styles.connectionStatus, { color: theme.colors.textSecondary }]}>
+                        {pushNotifications.isInitialized && pushNotifications.expoPushToken
+                          ? 'Ready'
+                          : pushNotifications.error
+                          ? 'Error'
+                          : 'Initializing...'}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  {!pushNotifications.permissions?.granted && (
+                    <TouchableOpacity
+                      style={[styles.permissionButton, { borderColor: theme.colors.primary }]}
+                      onPress={pushNotifications.requestPermissions}
+                    >
+                      <MaterialCommunityIcons
+                        name="shield-check"
+                        size={16}
+                        color={theme.colors.primary}
+                      />
+                      <Text style={[styles.permissionText, { color: theme.colors.primary }]}>
+                        Enable
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {pushNotifications.expoPushToken && (
+                  <View style={styles.tokenSection}>
+                    <Text style={[styles.tokenLabel, { color: theme.colors.textSecondary }]}>
+                      Push Token (for testing)
+                    </Text>
+                    <TouchableOpacity
+                      style={[styles.tokenContainer, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                      onPress={() => {
+                        Clipboard.setString(pushNotifications.expoPushToken!);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        Alert.alert('Copied!', 'Push token copied to clipboard');
+                      }}
+                    >
+                      <Text style={[styles.tokenText, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+                        {pushNotifications.expoPushToken}
+                      </Text>
+                      <MaterialCommunityIcons
+                        name="content-copy"
+                        size={16}
+                        color={theme.colors.primary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {pushNotifications.error && (
+                  <View style={styles.errorSection}>
+                    <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                      {pushNotifications.error}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.testButtons}>
+                  <TouchableOpacity
+                    style={[styles.testButton, { backgroundColor: theme.colors.primary + '20', borderColor: theme.colors.primary }]}
+                    onPress={() => pushNotifications.scheduleTestNotification(2)}
+                    disabled={!pushNotifications.isInitialized}
+                  >
+                    <MaterialCommunityIcons
+                      name="test-tube"
+                      size={16}
+                      color={theme.colors.primary}
+                    />
+                    <Text style={[styles.testButtonText, { color: theme.colors.primary }]}>
+                      Test Notification
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.testButton, { backgroundColor: theme.colors.success + '20', borderColor: theme.colors.success }]}
+                    onPress={() => pushNotifications.sendRobotNotification('cleaning_complete', { duration: 1800, areaCovered: 45 })}
+                    disabled={!pushNotifications.isInitialized}
+                  >
+                    <MaterialCommunityIcons
+                      name="check-circle"
+                      size={16}
+                      color={theme.colors.success}
+                    />
+                    <Text style={[styles.testButtonText, { color: theme.colors.success }]}>
+                      Test Complete
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Card>
+          </Animated.View>
+
           {/* Device Information */}
           <Animated.View entering={FadeInDown.delay(400).springify()}>
             <Card glassmorphism style={styles.sectionCard}>
@@ -663,6 +790,89 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   clearDataText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  pushNotificationInfo: {
+    gap: 16,
+  },
+  pushStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pushStatusInfo: {
+    flex: 1,
+  },
+  pushStatusLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pushStatusMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  permissionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  permissionText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tokenSection: {
+    gap: 8,
+  },
+  tokenLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  tokenContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 12,
+  },
+  tokenText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  errorSection: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  testButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  testButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  testButtonText: {
     fontSize: 14,
     fontWeight: '500',
   },

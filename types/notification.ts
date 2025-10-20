@@ -16,6 +16,7 @@ export interface AppNotification {
   timestamp: Date;
   duration?: number; // Auto-dismiss duration in ms, undefined for persistent
   isRead: boolean;
+  priority?: 'low' | 'medium' | 'high';
   actionLabel?: string;
   onAction?: () => void;
   data?: any; // Additional data for specific notification types
