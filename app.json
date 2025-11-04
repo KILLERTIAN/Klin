@@ -15,7 +15,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to your robot vacuum cleaner for remote control and monitoring.",
         "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect to your robot vacuum cleaner for remote control and monitoring.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -74,7 +76,8 @@
           "bluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to your robot vacuum cleaner for remote control and monitoring.",
           "bluetoothPeripheralUsageDescription": "This app uses Bluetooth to connect to your robot vacuum cleaner for remote control and monitoring."
         }
-      ]
+      ],
+      "react-native-wifi-reborn"
     ],
     "experiments": {
       "typedRoutes": true,

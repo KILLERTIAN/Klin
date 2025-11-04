@@ -4,16 +4,16 @@ import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View
+  Animated,
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
 } from 'react-native';
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { Card } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
 import { storageService } from '../services/storage';
@@ -77,7 +77,7 @@ export default function OnboardingScreen() {
     if (currentStep < onboardingSteps.length - 1) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
-      
+
       // Animate to next step
       Animated.timing(translateX, {
         toValue: -nextStep * screenWidth,
@@ -105,7 +105,7 @@ export default function OnboardingScreen() {
     if (currentStep > 0) {
       const prevStep = currentStep - 1;
       setCurrentStep(prevStep);
-      
+
       // Animate to previous step
       Animated.timing(translateX, {
         toValue: -prevStep * screenWidth,
@@ -123,7 +123,7 @@ export default function OnboardingScreen() {
         hasCompletedOnboarding: true,
         themeMode: 'system'
       });
-      
+
       // Navigate to main app
       router.replace('/(tabs)');
     } catch (error) {
@@ -187,20 +187,27 @@ export default function OnboardingScreen() {
         </View>
 
         {/* Name Input */}
-        <Card glassmorphism style={styles.inputCard}>
-          <TextInput
-            style={[styles.nameInput, { color: theme.colors.text }]}
-            placeholder="Enter your name"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={userName}
-            onChangeText={setUserName}
-            autoFocus
-            returnKeyType="done"
-            onSubmitEditing={handleComplete}
-          />
-        </Card>
+        <KeyboardAwareScrollView
+          enableOnAndroid
+          extraScrollHeight={100}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Card glassmorphism style={styles.inputCard}>
+            <TextInput
+              style={[styles.nameInput, { color: theme.colors.text }]}
+              placeholder="Enter your name"
+              placeholderTextColor={theme.colors.textSecondary}
+              value={userName}
+              onChangeText={setUserName}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleComplete}
+            />
+          </Card>
+        </KeyboardAwareScrollView>
       </View>
-    </Animated.View>
+    </Animated.View >
   );
 
   const renderProgressIndicator = () => (
@@ -211,8 +218,8 @@ export default function OnboardingScreen() {
           style={[
             styles.progressDot,
             {
-              backgroundColor: index === currentStep 
-                ? theme.colors.primary 
+              backgroundColor: index === currentStep
+                ? theme.colors.primary
                 : theme.colors.border,
               width: index === currentStep ? 24 : 8,
             }
@@ -225,7 +232,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top', 'left', 'right']}>
       <StatusBar style={theme.mode === 'dark' ? 'light' : 'dark'} />
-      
+
       <LinearGradient
         colors={theme.gradients.background as [string, string, ...string[]]}
         style={styles.gradient}
@@ -276,15 +283,15 @@ export default function OnboardingScreen() {
               </Text>
             </Pressable>
           )}
-          
+
           <View style={styles.spacer} />
 
           {/* Next/Continue Button */}
           {showNameInput ? (
             <Pressable
               style={[
-                styles.navButton, 
-                styles.primaryButton, 
+                styles.navButton,
+                styles.primaryButton,
                 { backgroundColor: theme.colors.primary },
                 !userName.trim() && { opacity: 0.5 }
               ]}

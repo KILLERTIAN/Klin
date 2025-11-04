@@ -4,15 +4,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
 
 interface DirectionalPadProps {
-  onDirectionPress: (direction: 'forward' | 'backward' | 'left' | 'right') => void;
+  onDirectionPress: (direction: 'forward' | 'backward' | 'left' | 'right' | 'stop') => void;
   disabled?: boolean;
   size?: number;
 }
@@ -48,32 +48,32 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
         centerPulse.value = withSpring(1, { damping: 15, stiffness: 100 });
       });
     };
-    
+
     const interval = setInterval(animate, 3000);
     return () => clearInterval(interval);
   }, []);
 
   const createButtonHandlers = (
-    direction: 'forward' | 'backward' | 'left' | 'right',
+    direction: 'forward' | 'backward' | 'left' | 'right' | 'stop',
     scaleValue: any,
     glowValue: any
   ) => ({
     onPressIn: () => {
       if (disabled) return;
-      
+
       scaleValue.value = withSpring(0.9, { damping: 15, stiffness: 300 });
       glowValue.value = withTiming(1, { duration: 150 });
-      
+
       // Haptic feedback with varying intensity based on direction
       const intensity = direction === 'forward' ? Haptics.ImpactFeedbackStyle.Medium :
-                      direction === 'backward' ? Haptics.ImpactFeedbackStyle.Light :
-                      Haptics.ImpactFeedbackStyle.Heavy;
-      
+        direction === 'backward' ? Haptics.ImpactFeedbackStyle.Light :
+          Haptics.ImpactFeedbackStyle.Heavy;
+
       Haptics.impactAsync(intensity);
     },
     onPressOut: () => {
       if (disabled) return;
-      
+
       scaleValue.value = withSpring(1, { damping: 15, stiffness: 300 });
       glowValue.value = withTiming(0, { duration: 300 });
     },
@@ -130,7 +130,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
   const buttonSize = size * 0.25;
   const centerSize = size * 0.3;
 
-  const getButtonStyle = (position: 'top' | 'bottom' | 'left' | 'right') => {
+  const getButtonStyle = (position: 'top' | 'bottom' | 'left' | 'right' | 'stop') => {
     const baseStyle = {
       width: buttonSize,
       height: buttonSize,
@@ -211,7 +211,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
       >
         {/* Glow Effect */}
         <Animated.View style={[glowStyle, forwardGlowStyle]} />
-        
+
         {/* Button Background */}
         <LinearGradient
           colors={theme.gradients.primary as [string, string, ...string[]]}
@@ -219,7 +219,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        
+
         {/* Glassmorphism Overlay */}
         <View
           style={[
@@ -232,7 +232,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
             }
           ]}
         />
-        
+
         <MaterialCommunityIcons
           name="chevron-up"
           size={24}
@@ -249,7 +249,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
       >
         {/* Glow Effect */}
         <Animated.View style={[glowStyle, backwardGlowStyle]} />
-        
+
         {/* Button Background */}
         <LinearGradient
           colors={theme.gradients.primary as [string, string, ...string[]]}
@@ -257,7 +257,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        
+
         {/* Glassmorphism Overlay */}
         <View
           style={[
@@ -270,7 +270,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
             }
           ]}
         />
-        
+
         <MaterialCommunityIcons
           name="chevron-down"
           size={24}
@@ -287,7 +287,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
       >
         {/* Glow Effect */}
         <Animated.View style={[glowStyle, leftGlowStyle]} />
-        
+
         {/* Button Background */}
         <LinearGradient
           colors={theme.gradients.primary as [string, string, ...string[]]}
@@ -295,7 +295,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        
+
         {/* Glassmorphism Overlay */}
         <View
           style={[
@@ -308,7 +308,7 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
             }
           ]}
         />
-        
+
         <MaterialCommunityIcons
           name="chevron-left"
           size={24}
@@ -318,35 +318,22 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
       </AnimatedPressable>
 
       {/* Right Button */}
-      <AnimatedPressable
-        style={[getButtonStyle('right'), rightAnimatedStyle]}
-        {...rightHandlers}
-        disabled={disabled}
-      >
+      <AnimatedPressable style={[getButtonStyle('right'), rightAnimatedStyle]} {...rightHandlers} disabled={disabled}>
         {/* Glow Effect */}
         <Animated.View style={[glowStyle, rightGlowStyle]} />
-        
         {/* Button Background */}
-        <LinearGradient
-          colors={theme.gradients.primary as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        
+        <LinearGradient colors={theme.gradients.primary as [string, string, ...string[]]} start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         {/* Glassmorphism Overlay */}
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: theme.glassmorphism.background,
-              borderWidth: 1,
-              borderColor: theme.glassmorphism.border,
-              borderRadius: theme.borderRadius.medium,
-            }
-          ]}
-        />
-        
+        <View style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: theme.glassmorphism.background,
+            borderWidth: 1,
+            borderColor: theme.glassmorphism.border,
+            borderRadius: theme.borderRadius.medium,
+          }
+        ]} />
         <MaterialCommunityIcons
           name="chevron-right"
           size={24}
@@ -356,39 +343,45 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
       </AnimatedPressable>
 
       {/* Center Circle */}
-      <AnimatedPressable style={[centerStyle, centerAnimatedStyle]} disabled>
+      <AnimatedPressable
+        style={[centerStyle, centerAnimatedStyle]}
+        onPressIn={() => {
+          if (disabled) return;
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          centerPulse.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+        }}
+        onPressOut={() => {
+          if (disabled) return;
+          centerPulse.value = withSpring(1, { damping: 15, stiffness: 300 });
+        }}
+        onPress={() => {
+          if (disabled) return;
+          onDirectionPress('stop');
+        }}
+        disabled={disabled}>
         {/* Center Glow Effect */}
-        <Animated.View
-          style={[
-            centerGlowStyle,
-            {
-              opacity: 0.2,
-              shadowColor: theme.colors.primary,
-            }
-          ]}
-        />
-        
+        <Animated.View style={[
+          centerGlowStyle,
+          {
+            opacity: 0.2,
+            shadowColor: theme.colors.primary,
+          }
+        ]} />
         {/* Center Background */}
-        <LinearGradient
-          colors={theme.gradients.accent as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        
+        <LinearGradient colors={theme.gradients.accent as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         {/* Center Glassmorphism Overlay */}
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: theme.glassmorphism.background,
-              borderWidth: 2,
-              borderColor: theme.glassmorphism.border,
-              borderRadius: theme.borderRadius.circular,
-            }
-          ]}
+        <View style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: theme.glassmorphism.background,
+            borderWidth: 2,
+            borderColor: theme.glassmorphism.border,
+            borderRadius: theme.borderRadius.circular,
+          }
+        ]}
         />
-        
+
         <MaterialCommunityIcons
           name="robot-vacuum"
           size={28}

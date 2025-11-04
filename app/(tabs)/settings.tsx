@@ -3,7 +3,10 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert, Clipboard, ScrollView,
+  Alert, Clipboard,
+  PermissionsAndroid,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -16,7 +19,7 @@ import Animated, {
   withSpring,
   withTiming
 } from 'react-native-reanimated';
-import { BluetoothConnection } from '../../components/ui/BluetoothConnection';
+import WifiManager from 'react-native-wifi-reborn';
 import { Card } from '../../components/ui/Card';
 import { Switch } from '../../components/ui/Switch';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
@@ -70,11 +73,12 @@ export default function SettingsScreen() {
   const [storageInfo, setStorageInfo] = useState<{ keys: string[]; size: number }>({ keys: [], size: 0 });
   const headerOpacity = useSharedValue(0);
   const contentScale = useSharedValue(0.95);
-
+  const [ssid, setSsid] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     loadPreferences();
     loadStorageInfo();
-    
+
     // Entrance animations
     headerOpacity.value = withTiming(1, { duration: 600 });
     contentScale.value = withSpring(1, { damping: 15, stiffness: 200 });
@@ -125,26 +129,43 @@ export default function SettingsScreen() {
     savePreferences(newPreferences);
   };
 
-  const handleWifiReconnect = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert(
-      'Reconnect WiFi',
-      'This will reconnect your robot to the WiFi network.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reconnect',
-          onPress: () => {
-            // Simulate reconnection
-            setPreferences(prev => ({
-              ...prev,
-              wifi: { ...prev.wifi, isConnected: true, signalStrength: 92 },
-            }));
-          },
-        },
-      ]
+  async function requestLocationPermission() {
+    if (Platform.OS !== 'android') return true;
+
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      {
+        title: 'Location permission required',
+        message: 'This app needs location permission to read the connected Wi-Fi name (SSID).',
+        buttonPositive: 'OK',
+        buttonNegative: 'Cancel',
+      }
     );
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+  }
+
+  const handleWifiReconnect = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      setError(null);
+      if (Platform.OS === 'android') {
+        const ok = await requestLocationPermission();
+        if (!ok) {
+          setError('Location permission denied');
+          return;
+        }
+      }
+
+      const currentSsid = await WifiManager.getCurrentWifiSSID();
+      setSsid(currentSsid || null);
+    } catch (e: any) {
+      setError(e.message || String(e));
+      setSsid(null)
+    }
   };
+  useEffect(() => {
+    handleWifiReconnect();
+  }, []);
 
   const handleClearData = () => {
     Alert.alert(
@@ -234,11 +255,11 @@ export default function SettingsScreen() {
                     style={[
                       styles.themeOption,
                       {
-                        backgroundColor: themeMode === mode 
-                          ? theme.colors.primary + '20' 
+                        backgroundColor: themeMode === mode
+                          ? theme.colors.primary + '20'
                           : 'transparent',
-                        borderColor: themeMode === mode 
-                          ? theme.colors.primary 
+                        borderColor: themeMode === mode
+                          ? theme.colors.primary
                           : theme.colors.border,
                       },
                     ]}
@@ -246,11 +267,11 @@ export default function SettingsScreen() {
                   >
                     <MaterialCommunityIcons
                       name={
-                        mode === 'light' 
-                          ? 'white-balance-sunny' 
-                          : mode === 'dark' 
-                          ? 'moon-waning-crescent' 
-                          : 'theme-light-dark'
+                        mode === 'light'
+                          ? 'white-balance-sunny'
+                          : mode === 'dark'
+                            ? 'moon-waning-crescent'
+                            : 'theme-light-dark'
                       }
                       size={20}
                       color={themeMode === mode ? theme.colors.primary : theme.colors.textSecondary}
@@ -259,8 +280,8 @@ export default function SettingsScreen() {
                       style={[
                         styles.themeOptionText,
                         {
-                          color: themeMode === mode 
-                            ? theme.colors.primary 
+                          color: themeMode === mode
+                            ? theme.colors.primary
                             : theme.colors.textSecondary,
                         },
                       ]}
@@ -274,9 +295,9 @@ export default function SettingsScreen() {
           </Animated.View>
 
           {/* Bluetooth Connection */}
-          <Animated.View entering={FadeInDown.delay(150).springify()}>
+          {/* <Animated.View entering={FadeInDown.delay(150).springify()}>
             <BluetoothConnection />
-          </Animated.View>
+          </Animated.View> */}
 
           {/* WiFi Settings */}
           <Animated.View entering={FadeInDown.delay(200).springify()}>
@@ -296,7 +317,7 @@ export default function SettingsScreen() {
                 <View style={styles.wifiStatus}>
                   <View style={styles.wifiDetails}>
                     <Text style={[styles.wifiSSID, { color: theme.colors.text }]}>
-                      {preferences.wifi.ssid}
+                      {ssid ?? (error ? `Error: ${error}` : 'Not available')}
                     </Text>
                     <View style={styles.wifiMeta}>
                       <View
@@ -420,12 +441,12 @@ export default function SettingsScreen() {
                         {pushNotifications.isInitialized && pushNotifications.expoPushToken
                           ? 'Ready'
                           : pushNotifications.error
-                          ? 'Error'
-                          : 'Initializing...'}
+                            ? 'Error'
+                            : 'Initializing...'}
                       </Text>
                     </View>
                   </View>
-                  
+
                   {!pushNotifications.permissions?.granted && (
                     <TouchableOpacity
                       style={[styles.permissionButton, { borderColor: theme.colors.primary }]}

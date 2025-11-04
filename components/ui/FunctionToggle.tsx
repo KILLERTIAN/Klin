@@ -4,11 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
-    interpolateColor,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -53,7 +53,7 @@ export const FunctionToggle: React.FC<FunctionToggleProps> = ({
 
   const handlePress = () => {
     if (disabled) return;
-    
+
     Haptics.impactAsync(enabled ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
     onToggle(!enabled);
   };
@@ -81,7 +81,7 @@ export const FunctionToggle: React.FC<FunctionToggleProps> = ({
 
   const animatedKnobStyle = useAnimatedStyle(() => {
     const translateX = toggleProgress.value * 24;
-    
+
     return {
       transform: [{ translateX }],
     };
@@ -100,13 +100,8 @@ export const FunctionToggle: React.FC<FunctionToggleProps> = ({
   });
 
   return (
-    <AnimatedPressable
-      style={[styles.container, animatedCardStyle]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={handlePress}
-      disabled={disabled}
-    >
+    <AnimatedPressable style={[styles.container, animatedCardStyle]} onPressIn={handlePressIn} onPressOut={handlePressOut}
+      onPress={handlePress} disabled={disabled}>
       {/* Glow Effect */}
       <Animated.View
         style={[
