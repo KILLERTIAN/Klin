@@ -1,6 +1,7 @@
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface AppTheme {
+  [x: string]: any;
   mode: 'light' | 'dark';
   colors: {
     primary: string;

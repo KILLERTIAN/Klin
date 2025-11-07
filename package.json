@@ -11,7 +11,6 @@
     "lint": "expo lint"
   },
   "dependencies": {
-    "@config-plugins/react-native-ble-plx": "^7.0.0",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
@@ -27,6 +26,7 @@
     "expo-image": "~3.0.10",
     "expo-linear-gradient": "~15.0.7",
     "expo-linking": "~8.0.8",
+    "expo-network": "~8.0.7",
     "expo-notifications": "^0.32.12",
     "expo-router": "~6.0.14",
     "expo-splash-screen": "~31.0.10",

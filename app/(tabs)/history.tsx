@@ -9,14 +9,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Alert,
-    FlatList,
-    RefreshControl,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function HistoryScreen() {
@@ -35,7 +35,7 @@ export default function HistoryScreen() {
       setLoading(true);
       const history = await historyService.getCleaningHistory();
       setSessions(history);
-      
+
       // Apply current filters and sorting
       const filtered = await historyService.getFilteredHistory(activeFilter, sortBy, sortOrder);
       setFilteredSessions(filtered);
@@ -80,7 +80,7 @@ export default function HistoryScreen() {
 
   const handleDeleteSession = (sessionId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     Alert.alert(
       'Delete Session',
       'Are you sure you want to delete this cleaning session? This action cannot be undone.',
@@ -137,17 +137,17 @@ export default function HistoryScreen() {
           {activeTab === 'history' ? 'Cleaning History' : 'Analytics'}
         </Text>
       </View>
-      
+
       <View style={styles.tabSwitcher}>
         <TouchableOpacity
           style={[
             styles.tabButton,
             activeTab === 'history' && styles.tabButtonActive,
             {
-              backgroundColor: activeTab === 'history' 
-                ? theme.colors.primary 
-                : theme.mode === 'dark' 
-                  ? 'rgba(255,255,255,0.1)' 
+              backgroundColor: activeTab === 'history'
+                ? theme.colors.primary
+                : theme.mode === 'dark'
+                  ? 'rgba(255,255,255,0.1)'
                   : 'rgba(0,0,0,0.05)',
             }
           ]}
@@ -169,16 +169,16 @@ export default function HistoryScreen() {
             History
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[
             styles.tabButton,
             activeTab === 'analytics' && styles.tabButtonActive,
             {
-              backgroundColor: activeTab === 'analytics' 
-                ? theme.colors.primary 
-                : theme.mode === 'dark' 
-                  ? 'rgba(255,255,255,0.1)' 
+              backgroundColor: activeTab === 'analytics'
+                ? theme.colors.primary
+                : theme.mode === 'dark'
+                  ? 'rgba(255,255,255,0.1)'
                   : 'rgba(0,0,0,0.05)',
             }
           ]}
@@ -201,7 +201,7 @@ export default function HistoryScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-      
+
       {activeTab === 'history' && sessions.length > 0 && (
         <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           {filteredSessions.length} of {sessions.length} sessions
@@ -258,7 +258,7 @@ export default function HistoryScreen() {
       ) : (
         <>
           {renderTabHeader()}
-          
+
           {activeTab === 'history' ? (
             <>
               <HistoryFilters
@@ -268,7 +268,7 @@ export default function HistoryScreen() {
                 onFilterChange={handleFilterChange}
                 onSortChange={handleSortChange}
               />
-              
+
               {filteredSessions.length === 0 ? (
                 renderFilteredEmptyState()
               ) : (
@@ -311,6 +311,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    marginTop: 40
   },
   title: {
     fontSize: 28,

@@ -341,9 +341,6 @@ export default function SettingsScreen() {
                       size={20}
                       color={theme.colors.success}
                     />
-                    <Text style={[styles.signalText, { color: theme.colors.textSecondary }]}>
-                      {preferences.wifi.signalStrength}%
-                    </Text>
                   </View>
                 </View>
 
