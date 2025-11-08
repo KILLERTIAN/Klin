@@ -43,15 +43,23 @@ def stop_everything():
 @app.route('/move/<direction>', methods=['GET'])
 def move(direction):
     stop_all_motors()
+    # Handle normal directions
     if direction in MOTOR_PINS:
         pin_states[MOTOR_PINS[direction]] = True
         return jsonify({"status": f"Simulated moving {direction}"}), 200
+    # Handle U-turns
+    elif direction == 'u_turn_left' or direction == 'left_uturn':
+        pin_states[MOTOR_PINS['left']] = True
+        return jsonify({"status": "Simulated performing left U-turn"}), 200
+    elif direction == 'u_turn_right' or direction == 'right_uturn':
+        pin_states[MOTOR_PINS['right']] = True
+        return jsonify({"status": "Simulated performing right U-turn"}), 200
+    # Stop command
     elif direction == 'stop':
         stop_all_motors()
         return jsonify({"status": "Simulated stop movement"}), 200
     else:
         return jsonify({"error": "Invalid direction"}), 400
-
 
 # 💧 Function toggle routes
 @app.route('/toggle/pump', methods=['GET'])
@@ -132,13 +140,11 @@ def stop_all():
 def home():
     return jsonify({"message": "Robot control API running (simulation mode)"}), 200
 
-
 # 🧾 Log every request
 @app.before_request
 def log_request():
     print(f"➡️  Received {request.method} {request.path}")
 
-
 # 🚀 Run server
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

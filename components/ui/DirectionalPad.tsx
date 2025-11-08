@@ -4,7 +4,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
-  useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming
@@ -12,7 +11,16 @@ import Animated, {
 import { useTheme } from '../../hooks/useTheme';
 
 interface DirectionalPadProps {
-  onDirectionPress: (direction: 'forward' | 'backward' | 'left' | 'right' | 'stop') => void;
+  onDirectionPress: (
+    direction:
+      | 'forward'
+      | 'backward'
+      | 'left'
+      | 'right'
+      | 'left_uturn'
+      | 'right_uturn'
+      | 'stop'
+  ) => void;
   disabled?: boolean;
   size?: number;
 }
@@ -22,7 +30,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export const DirectionalPad: React.FC<DirectionalPadProps> = ({
   onDirectionPress,
   disabled = false,
-  size = 200
+  size = 200,
 }) => {
   const { theme } = useTheme();
 
@@ -31,106 +39,83 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
   const backwardScale = useSharedValue(1);
   const leftScale = useSharedValue(1);
   const rightScale = useSharedValue(1);
+  const leftUTurnScale = useSharedValue(1);
+  const rightUTurnScale = useSharedValue(1);
 
   // Glow animation values
   const forwardGlow = useSharedValue(0);
   const backwardGlow = useSharedValue(0);
   const leftGlow = useSharedValue(0);
   const rightGlow = useSharedValue(0);
+  const leftUTurnGlow = useSharedValue(0);
+  const rightUTurnGlow = useSharedValue(0);
 
-  // Pulse animation for the center
   const centerPulse = useSharedValue(1);
 
   React.useEffect(() => {
-    // Subtle breathing animation for the center
     const animate = () => {
       centerPulse.value = withSpring(1.05, { damping: 15, stiffness: 100 }, () => {
         centerPulse.value = withSpring(1, { damping: 15, stiffness: 100 });
       });
     };
-
     const interval = setInterval(animate, 3000);
     return () => clearInterval(interval);
   }, []);
 
   const createButtonHandlers = (
-    direction: 'forward' | 'backward' | 'left' | 'right' | 'stop',
+    direction:
+      | 'forward'
+      | 'backward'
+      | 'left'
+      | 'right'
+      | 'left_uturn'
+      | 'right_uturn'
+      | 'stop',
     scaleValue: any,
     glowValue: any
   ) => ({
     onPressIn: () => {
       if (disabled) return;
-
       scaleValue.value = withSpring(0.9, { damping: 15, stiffness: 300 });
       glowValue.value = withTiming(1, { duration: 150 });
 
-      // Haptic feedback with varying intensity based on direction
-      const intensity = direction === 'forward' ? Haptics.ImpactFeedbackStyle.Medium :
-        direction === 'backward' ? Haptics.ImpactFeedbackStyle.Light :
-          Haptics.ImpactFeedbackStyle.Heavy;
+      const intensity =
+        direction === 'forward'
+          ? Haptics.ImpactFeedbackStyle.Medium
+          : direction === 'backward'
+            ? Haptics.ImpactFeedbackStyle.Light
+            : Haptics.ImpactFeedbackStyle.Heavy;
 
       Haptics.impactAsync(intensity);
     },
     onPressOut: () => {
       if (disabled) return;
-
       scaleValue.value = withSpring(1, { damping: 15, stiffness: 300 });
       glowValue.value = withTiming(0, { duration: 300 });
     },
     onPress: () => {
       if (disabled) return;
       onDirectionPress(direction);
-    }
+    },
   });
 
-  // Button handlers
+  // Handlers
   const forwardHandlers = createButtonHandlers('forward', forwardScale, forwardGlow);
   const backwardHandlers = createButtonHandlers('backward', backwardScale, backwardGlow);
   const leftHandlers = createButtonHandlers('left', leftScale, leftGlow);
   const rightHandlers = createButtonHandlers('right', rightScale, rightGlow);
+  const leftUTurnHandlers = createButtonHandlers('left_uturn', leftUTurnScale, leftUTurnGlow);
+  const rightUTurnHandlers = createButtonHandlers('right_uturn', rightUTurnScale, rightUTurnGlow);
 
   // Animated styles
-  const forwardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: forwardScale.value }],
-  }));
-
-  const backwardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: backwardScale.value }],
-  }));
-
-  const leftAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: leftScale.value }],
-  }));
-
-  const rightAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: rightScale.value }],
-  }));
-
-  const centerAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: centerPulse.value }],
-  }));
-
-  // Glow styles
-  const forwardGlowStyle = useAnimatedStyle(() => ({
-    opacity: forwardGlow.value * 0.8,
-  }));
-
-  const backwardGlowStyle = useAnimatedStyle(() => ({
-    opacity: backwardGlow.value * 0.8,
-  }));
-
-  const leftGlowStyle = useAnimatedStyle(() => ({
-    opacity: leftGlow.value * 0.8,
-  }));
-
-  const rightGlowStyle = useAnimatedStyle(() => ({
-    opacity: rightGlow.value * 0.8,
-  }));
+  const makeAnimatedStyle = (scaleValue: any) => ({
+    transform: [{ scale: scaleValue.value }],
+  });
 
   const buttonSize = size * 0.25;
   const centerSize = size * 0.3;
 
-  const getButtonStyle = (position: 'top' | 'bottom' | 'left' | 'right' | 'stop') => {
+  const getButtonStyle = (position: string) => {
     const baseStyle = {
       width: buttonSize,
       height: buttonSize,
@@ -143,30 +128,28 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
 
     switch (position) {
       case 'top':
-        return {
-          ...baseStyle,
-          top: 0,
-          left: (size - buttonSize) / 2,
-        };
+        return { ...baseStyle, top: 0, left: (size - buttonSize) / 2 };
       case 'bottom':
-        return {
-          ...baseStyle,
-          bottom: 0,
-          left: (size - buttonSize) / 2,
-        };
+        return { ...baseStyle, bottom: 0, left: (size - buttonSize) / 2 };
       case 'left':
-        return {
-          ...baseStyle,
-          left: 0,
-          top: (size - buttonSize) / 2,
-        };
+        return { ...baseStyle, left: 0, top: (size - buttonSize) / 2 };
       case 'right':
-        return {
-          ...baseStyle,
-          right: 0,
-          top: (size - buttonSize) / 2,
-        };
+        return { ...baseStyle, right: 0, top: (size - buttonSize) / 2 };
+      case 'bottomLeft':
+        return { ...baseStyle, bottom: 0, left: 10 }; // bottom-left corner
+      case 'bottomRight':
+        return { ...baseStyle, bottom: 0, right: 10 }; // bottom-right corner
     }
+  };
+
+  const glowStyle = {
+    position: 'absolute' as const,
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: theme.borderRadius.medium + 4,
+    ...theme.shadows.glow,
   };
 
   const centerStyle = {
@@ -181,16 +164,6 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
     overflow: 'hidden' as const,
   };
 
-  const glowStyle = {
-    position: 'absolute' as const,
-    top: -4,
-    left: -4,
-    right: -4,
-    bottom: -4,
-    borderRadius: theme.borderRadius.medium + 4,
-    ...theme.shadows.glow,
-  };
-
   const centerGlowStyle = {
     position: 'absolute' as const,
     top: -6,
@@ -201,150 +174,53 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
     ...theme.shadows.glow,
   };
 
-  return (
-    <View style={[styles.container, { width: size, height: size }]}>
-      {/* Forward Button */}
-      <AnimatedPressable
-        style={[getButtonStyle('top'), forwardAnimatedStyle]}
-        {...forwardHandlers}
-        disabled={disabled}
-      >
-        {/* Glow Effect */}
-        <Animated.View style={[glowStyle, forwardGlowStyle]} />
-
-        {/* Button Background */}
-        <LinearGradient
-          colors={theme.gradients.primary as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-
-        {/* Glassmorphism Overlay */}
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: theme.glassmorphism.background,
-              borderWidth: 1,
-              borderColor: theme.glassmorphism.border,
-              borderRadius: theme.borderRadius.medium,
-            }
-          ]}
-        />
-
-        <MaterialCommunityIcons
-          name="chevron-up"
-          size={24}
-          color="#FFFFFF"
-          style={{ zIndex: 2 }}
-        />
-      </AnimatedPressable>
-
-      {/* Backward Button */}
-      <AnimatedPressable
-        style={[getButtonStyle('bottom'), backwardAnimatedStyle]}
-        {...backwardHandlers}
-        disabled={disabled}
-      >
-        {/* Glow Effect */}
-        <Animated.View style={[glowStyle, backwardGlowStyle]} />
-
-        {/* Button Background */}
-        <LinearGradient
-          colors={theme.gradients.primary as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-
-        {/* Glassmorphism Overlay */}
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: theme.glassmorphism.background,
-              borderWidth: 1,
-              borderColor: theme.glassmorphism.border,
-              borderRadius: theme.borderRadius.medium,
-            }
-          ]}
-        />
-
-        <MaterialCommunityIcons
-          name="chevron-down"
-          size={24}
-          color="#FFFFFF"
-          style={{ zIndex: 2 }}
-        />
-      </AnimatedPressable>
-
-      {/* Left Button */}
-      <AnimatedPressable
-        style={[getButtonStyle('left'), leftAnimatedStyle]}
-        {...leftHandlers}
-        disabled={disabled}
-      >
-        {/* Glow Effect */}
-        <Animated.View style={[glowStyle, leftGlowStyle]} />
-
-        {/* Button Background */}
-        <LinearGradient
-          colors={theme.gradients.primary as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-
-        {/* Glassmorphism Overlay */}
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: theme.glassmorphism.background,
-              borderWidth: 1,
-              borderColor: theme.glassmorphism.border,
-              borderRadius: theme.borderRadius.medium,
-            }
-          ]}
-        />
-
-        <MaterialCommunityIcons
-          name="chevron-left"
-          size={24}
-          color="#FFFFFF"
-          style={{ zIndex: 2 }}
-        />
-      </AnimatedPressable>
-
-      {/* Right Button */}
-      <AnimatedPressable style={[getButtonStyle('right'), rightAnimatedStyle]} {...rightHandlers} disabled={disabled}>
-        {/* Glow Effect */}
-        <Animated.View style={[glowStyle, rightGlowStyle]} />
-        {/* Button Background */}
-        <LinearGradient colors={theme.gradients.primary as [string, string, ...string[]]} start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        {/* Glassmorphism Overlay */}
-        <View style={[
+  // helper for consistent button UI
+  const renderButton = (
+    icon: string,
+    style: any,
+    glowValue: any,
+    handlers: any
+  ) => (
+    <AnimatedPressable style={style} {...handlers} disabled={disabled}>
+      <Animated.View style={[glowStyle, { opacity: glowValue.value * 0.8 }]} />
+      <LinearGradient
+        colors={theme.gradients.primary as [string, string, ...string[]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View
+        style={[
           StyleSheet.absoluteFill,
           {
             backgroundColor: theme.glassmorphism.background,
             borderWidth: 1,
             borderColor: theme.glassmorphism.border,
             borderRadius: theme.borderRadius.medium,
-          }
-        ]} />
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={24}
-          color="#FFFFFF"
-          style={{ zIndex: 2 }}
-        />
-      </AnimatedPressable>
+          },
+        ]}
+      />
+      <MaterialCommunityIcons name={icon as any} size={24} color="#FFFFFF" style={{ zIndex: 2 }} />
+    </AnimatedPressable>
+  );
 
-      {/* Center Circle */}
+  return (
+    <View style={[styles.container, { width: size, height: size }]}>
+      {/* Directional Buttons */}
+      {renderButton('chevron-up', [getButtonStyle('top'), makeAnimatedStyle(forwardScale)], forwardGlow, forwardHandlers)}
+      {renderButton('chevron-down', [getButtonStyle('bottom'), makeAnimatedStyle(backwardScale)], backwardGlow, backwardHandlers)}
+      {renderButton('chevron-left', [getButtonStyle('left'), makeAnimatedStyle(leftScale)], leftGlow, leftHandlers)}
+      {renderButton('chevron-right', [getButtonStyle('right'), makeAnimatedStyle(rightScale)], rightGlow, rightHandlers)}
+
+      {/* 🔄 Left U-Turn Button */}
+      {renderButton('rotate-left', [getButtonStyle('bottomLeft'), makeAnimatedStyle(leftUTurnScale)], leftUTurnGlow, leftUTurnHandlers)}
+
+      {/* 🔄 Right U-Turn Button */}
+      {renderButton('rotate-right', [getButtonStyle('bottomRight'), makeAnimatedStyle(rightUTurnScale)], rightUTurnGlow, rightUTurnHandlers)}
+
+      {/* 🏠 Center (Stop) Button */}
       <AnimatedPressable
-        style={[centerStyle, centerAnimatedStyle]}
+        style={[centerStyle, { transform: [{ scale: centerPulse.value }] }]}
         onPressIn={() => {
           if (disabled) return;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -358,30 +234,31 @@ export const DirectionalPad: React.FC<DirectionalPadProps> = ({
           if (disabled) return;
           onDirectionPress('stop');
         }}
-        disabled={disabled}>
-        {/* Center Glow Effect */}
-        <Animated.View style={[
-          centerGlowStyle,
-          {
-            opacity: 0.2,
-            shadowColor: theme.colors.primary,
-          }
-        ]} />
-        {/* Center Background */}
-        <LinearGradient colors={theme.gradients.accent as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-        {/* Center Glassmorphism Overlay */}
-        <View style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: theme.glassmorphism.background,
-            borderWidth: 2,
-            borderColor: theme.glassmorphism.border,
-            borderRadius: theme.borderRadius.circular,
-          }
-        ]}
+        disabled={disabled}
+      >
+        <Animated.View
+          style={[
+            centerGlowStyle,
+            { opacity: 0.2, shadowColor: theme.colors.primary },
+          ]}
         />
-
+        <LinearGradient
+          colors={theme.gradients.accent as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            {
+              backgroundColor: theme.glassmorphism.background,
+              borderWidth: 2,
+              borderColor: theme.glassmorphism.border,
+              borderRadius: theme.borderRadius.circular,
+            },
+          ]}
+        />
         <MaterialCommunityIcons
           name="robot-vacuum"
           size={28}

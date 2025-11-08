@@ -13,7 +13,16 @@ import { useTheme } from '../../hooks/useTheme';
 
 interface DirectionalPadProps {
     size?: number;
-    onDirectionPress: (direction: 'forward' | 'backward' | 'left' | 'right' | 'stop') => void;
+    onDirectionPress: (
+        direction:
+            | 'forward'
+            | 'backward'
+            | 'left'
+            | 'right'
+            | 'left_uturn'
+            | 'right_uturn'
+            | 'stop'
+    ) => void;
 }
 
 export const JoyStick: React.FC<DirectionalPadProps> = ({
@@ -29,6 +38,14 @@ export const JoyStick: React.FC<DirectionalPadProps> = ({
     const getDirection = (x: number, y: number) => {
         const threshold = radius * 0.4;
         if (Math.abs(x) < threshold && Math.abs(y) < threshold) return 'stop';
+
+        const angle = (Math.atan2(y, x) * 180) / Math.PI;
+
+        // 🔄 Diagonal bottom-left & bottom-right = U-turns
+        if (angle > 120 && angle < 160) return 'left_uturn';   // bottom-left
+        if (angle > 20 && angle < 60) return 'right_uturn';    // bottom-right
+
+        // 🧭 Normal directions
         if (Math.abs(y) > Math.abs(x)) {
             return y < 0 ? 'forward' : 'backward';
         } else {
@@ -65,20 +82,11 @@ export const JoyStick: React.FC<DirectionalPadProps> = ({
     }));
 
     return (
-        <View
-            style={[
-                styles.container,
-                { width: size, height: size },
-            ]}
-        >
+        <View style={[styles.container, { width: size, height: size }]}>
             <View
                 style={[
                     styles.pad,
-                    {
-                        width: size,
-                        height: size,
-                        borderColor: theme.colors.border,
-                    },
+                    { width: size, height: size, borderColor: theme.colors.border },
                 ]}
             >
                 <PanGestureHandler
@@ -96,7 +104,6 @@ export const JoyStick: React.FC<DirectionalPadProps> = ({
                             animatedKnobStyle,
                         ]}
                     >
-                        {/* ✅ Icon centered in knob */}
                         <MaterialCommunityIcons
                             name="robot-vacuum"
                             size={32}

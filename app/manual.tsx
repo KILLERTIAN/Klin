@@ -26,8 +26,9 @@ export default function ManualScreen() {
     const [sideBroomEnabled, setSideBroomEnabled] = useState(false);
     const [vacuumEnabled, setVacuumEnabled] = useState(false);
     const [centreBrushEnabled, setCentreBrushEnabled] = useState(false);
-    const [sideBrushEnabled, setsideBrushEnabled] = useState(false);
     const [status, setStatus] = useState('Idle');
+    const [rightturn, setRightTurn] = useState(false);
+    const [leftturn, setLeftTurn] = useState(false);
     const [buttonPressed, setButtonPressed] = useState(false);
     const [controlMode, setControlMode] = useState<'joystick' | 'directional'>('joystick');
     const sendCommand = async (path: string) => {
@@ -74,7 +75,8 @@ export default function ManualScreen() {
             setSideBroomEnabled(false);
             setMoppingEnabled(false);
             setCentreBrushEnabled(false);
-            setsideBrushEnabled(false);
+            setRightTurn(false);
+            setLeftTurn(false);
         } catch (error) {
             console.error('Error stopping all:', error);
             setStatus('Error stopping all');
@@ -91,15 +93,22 @@ export default function ManualScreen() {
         stopCommand();
     }
 
-    const sendDirection = async (direction: 'forward' | 'backward' | 'left' | 'right' | 'stop') => {
+    const sendDirection = async (
+        direction: 'forward' | 'backward' | 'left' | 'right' | 'stop' | 'left_uturn' | 'right_uturn'
+    ) => {
         try {
+            console.log('Sending direction:', direction);
             const response = await fetch(`${BASE_URL}/move/${direction}`);
             const data = await response.json();
             console.log('Response:', data);
+            setStatus(data.status || `Moving ${direction}`);
         } catch (error) {
             console.error('Error sending command:', error);
+            setStatus('Error sending direction');
         }
     };
+
+
 
     return (
         <LinearGradient colors={theme.mode === 'dark' ? ['#1a1a2e', '#16213e', '#0f3460'] : ['#e3f2fd', '#bbdefb', '#90caf9']}
@@ -127,7 +136,6 @@ export default function ManualScreen() {
                         <Text style={{ color: theme.colors.text, marginBottom: 6, fontWeight: '600' }}>
                             Manual Connection Configuration
                         </Text>
-
                         {/* Input field for hostname/IP + optional port */}
                         <View style={{
                             flexDirection: 'row',
@@ -160,7 +168,6 @@ export default function ManualScreen() {
                                     autoCorrect={false}
                                 />
                             </View>
-
                             <TouchableOpacity
                                 style={{
                                     backgroundColor: '#4CAF50',
@@ -187,19 +194,6 @@ export default function ManualScreen() {
                                 <Text style={{ color: 'white', fontWeight: '600' }}>✅ Set</Text>
                             </TouchableOpacity>
                         </View>
-
-                        {/* Optional: Auto-detect local IP */}
-                        <TouchableOpacity
-                            style={{
-                                backgroundColor: '#007AFF',
-                                paddingVertical: 10,
-                                paddingHorizontal: 20,
-                                borderRadius: 10,
-                            }}
-                            onPress={updateBaseUrl}
-                        >
-                            <Text style={{ color: 'white', fontWeight: '600' }}>🔄 Auto Detect Local IP</Text>
-                        </TouchableOpacity>
 
                         {BASE_URL ? (
                             <Text style={{ marginTop: 5, color: theme.colors.textSecondary }}>
@@ -252,7 +246,7 @@ export default function ManualScreen() {
                         </Text>
                         <View style={styles.padContainer}>
                             {controlMode === 'joystick' ? (
-                                <JoyStick onDirectionPress={sendDirection} />
+                                <JoyStick onDirectionPress={sendDirection} size={200} />
                             ) : (
                                 <DirectionalPad onDirectionPress={sendDirection} size={200} />
                             )}
@@ -341,6 +335,28 @@ export default function ManualScreen() {
                                     }}
                                     onDown={() => {
                                         sendCommand('centrebrush/down');
+                                    }}
+                                />
+                            </View>
+                            <View style={styles.functionItem}>
+                                <FunctionToggle
+                                    title="Left U-turn"
+                                    icon="brush"
+                                    enabled={leftturn}
+                                    onToggle={(value) => {
+                                        setLeftTurn(value)
+                                        sendCommand('toggle/side')
+                                    }}
+                                />
+                            </View>
+                            <View style={styles.functionItem}>
+                                <FunctionToggle
+                                    title="Right U-Turn"
+                                    icon="brush"
+                                    enabled={rightturn}
+                                    onToggle={(value) => {
+                                        setRightTurn(value)
+                                        sendCommand('toggle/side')
                                     }}
                                 />
                             </View>
